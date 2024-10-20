@@ -7,6 +7,7 @@ const SignUp = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
 
   // Function to send user details to the backend
   const saveUserDetailsToMongoDB = async (userDetails) => {
