@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from '../firebase'; // Adjust the path as necessary
 import { useNavigate } from 'react-router-dom';
-import './SignUp.css'; // Optional: Create a CSS file for styling
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -78,26 +77,47 @@ const SignUp = () => {
   };
 
   return (
-    <div className="signup-container">
-      <h1>Create an Account</h1>
-      <form onSubmit={handleEmailSignUp}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Sign Up with Email</button>
-      </form>
-      <button onClick={handleGoogleSignUp}>Continue with Google</button>
+    <div className="flex justify-center items-center min-h-screen bg-cover bg-center"
+      style={{
+        backgroundImage: "url('https://media.istockphoto.com/id/1424757003/photo/budget-and-financial-planning-concept-including-a-management-or-executive-cfo-estimating-the.jpg?s=612x612&w=0&k=20&c=-qReHcxce_QnKsWlvV1x7jOndAAjPpiuFR7fZ7AUfQ0=')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
+      <div className="flex w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden"> {/* Adjusted max-w-md */}
+        <div className="flex flex-col w-full p-8">
+          <h1 className="text-2xl font-bold mb-5">Create an Account</h1>
+          <form onSubmit={handleEmailSignUp} className="flex flex-col">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mb-4 p-4 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mb-4 p-4 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              className="w-full p-4 mb-4 bg-blue-500 text-white rounded-lg text-lg font-semibold hover:bg-blue-600 transition duration-300"
+            >
+              Sign Up with Email
+            </button>
+          </form>
+          <button
+            onClick={handleGoogleSignUp}
+            className="w-full p-4 bg-red-500 text-white rounded-lg text-lg font-semibold hover:bg-red-600 transition duration-300"
+          >
+            Continue with Google
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
