@@ -11,9 +11,11 @@ const Navbar = () => {
                             DashBoard
                         </button>
                     </a>
+                    <a href='/signin'>
                     <button className="bg-[#4D46CF] px-4 py-2 text-sm font-bold text-white border border-[#4D46CF] rounded-lg shadow-lg hover:bg-[#3b3b98] transition-transform duration-300 transform hover:scale-105">
                         Get Started
                     </button>
+                    </a>
                 </div>
             </div>
         </nav>

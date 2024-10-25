@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiEdit, FiTrash } from "react-icons/fi"; // Added icons for edit and delete
 import axios from "axios";
+import Layout from "./Layout";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Budgets = () => {
   const [budgets, setBudgets] = useState([]);
@@ -12,6 +15,11 @@ const Budgets = () => {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDescription, setExpenseDescription] = useState("");
   const [user, setUser] = useState(null);
+  const [expenses, setExpenses] = useState([]); 
+  const [isEditingBudget, setIsEditingBudget] = useState(false); // To handle budget edit state
+  const [isEditingExpense, setIsEditingExpense] = useState(false); // To handle expense edit state
+  const [editBudgetId, setEditBudgetId] = useState(null); // Store current budget being edited
+  const [editExpenseId, setEditExpenseId] = useState(null); // Store current expense being edited
 
   useEffect(() => {
     const auth = getAuth();
@@ -39,6 +47,17 @@ const Budgets = () => {
     }
   };
 
+  const loadExpenses = async (budgetId) => {
+    try {
+      const response = await axios.get("http://localhost:5000/getexpenses", {
+        params: { budgetId },
+      });
+      setExpenses(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+    }
+  };
+
   const handleCreateBudget = async (event) => {
     event.preventDefault();
     try {
@@ -52,9 +71,10 @@ const Budgets = () => {
         title: newBudgetTitle,
         totalAmount: parseFloat(newBudgetTotalAmount),
         remaining: parseFloat(newBudgetTotalAmount),
-        expenses: 0,
+        expenses: [],
         createdAt: new Date().toISOString(),
       };
+      toast.success("Budget Added Successfully !", { autoClose: 1000 });
 
       await axios.post("http://localhost:5000/addbudget", newBudget);
       loadBudgets(user.uid);
@@ -62,7 +82,59 @@ const Budgets = () => {
       setNewBudgetTotalAmount("");
       setShowForm(false);
     } catch (error) {
+      toast.error("Error adding budget !", { autoClose: 1000 });
       console.error("Error adding budget:", error);
+    }
+  };
+  const handleUpdateBudget = async (event) => {
+    event.preventDefault();
+    try {
+      console.log("Sending budgetId:", editBudgetId); // Log the budgetId before sending
+      console.log("Title:", newBudgetTitle);
+      console.log("Total Amount:", parseFloat(newBudgetTotalAmount));
+  
+      // Sending the request to update the budget
+      const response = await axios.put(`http://localhost:5000/updatebudget/${editBudgetId}`, {
+        title: newBudgetTitle,
+        totalAmount: parseFloat(newBudgetTotalAmount),
+      });
+  
+      toast.success("Budget Updated Successfully!", { autoClose: 1000 });
+      loadBudgets(user.uid);
+      setNewBudgetTitle("");
+      setNewBudgetTotalAmount("");
+      setIsEditingBudget(false);
+      setEditBudgetId(null);
+    } catch (error) {
+      // Check if the error response contains a specific message
+      if (error.response) {
+        // Error response from the server
+        const errorMessage = error.response.data.message || 'Error updating budget!';
+        toast.error(errorMessage, { autoClose: 1000 });
+        console.error("Server Error:", errorMessage);
+      } else if (error.request) {
+        // Request was made but no response was received
+        toast.error("No response from the server.", { autoClose: 1000 });
+        console.error("No response from server:", error.request);
+      } else {
+        // Something happened in setting up the request
+        toast.error("Error in request setup: " + error.message, { autoClose: 1000 });
+        console.error("Request Setup Error:", error.message);
+      }
+    }
+  };
+  
+  
+  
+  const handleDeleteBudget = async (budgetId) => {
+    try {
+      await axios.delete(`http://localhost:5000/deletebudget/${budgetId}`);
+      toast.success("Budget Deleted Successfully!", { autoClose: 1000 });
+      setIsEditingExpense(false);
+      loadBudgets(user.uid);
+    } catch (error) {
+      toast.error("Error deleting budget!", { autoClose: 1000 });
+      console.error("Error deleting budget:", error);
     }
   };
 
@@ -74,141 +146,256 @@ const Budgets = () => {
         amount: parseFloat(expenseAmount),
         description: expenseDescription,
         date: new Date().toISOString(),
-        userid: user.uid,
+        userId: user.uid,
       };
-
       await axios.post("http://localhost:5000/addexpense", newExpense);
+      toast.success("Expense Added Successfully !", { autoClose: 1000 });
       loadBudgets(user.uid);
+      loadExpenses(selectedBudget._id); 
       setExpenseAmount("");
       setExpenseDescription("");
-    } catch (error) {
-      console.error("Error adding expense:", error);
+    }catch (error) {
+      // Check if the error response contains a specific message
+      if (error.response) {
+        // Error response from the server
+        const errorMessage = error.response.data.message || 'Error updating Expense!';
+        toast.error(errorMessage, { autoClose: 2000 });
+        console.error("Server Error:", errorMessage);
+      } else if (error.request) {
+        // Request was made but no response was received
+        toast.error("No response from the server.", { autoClose: 1000 });
+        console.error("No response from server:", error.request);
+      } else {
+        // Something happened in setting up the request
+        toast.error("Error in request setup: " + error.message, { autoClose: 1000 });
+        console.error("Request Setup Error:", error.message);
+      }
     }
   };
 
+  const handleUpdateExpense = async (event) => {
+    event.preventDefault();
+    try {
+      await axios.put(`http://localhost:5000/updateexpense/${editExpenseId}`, {
+        amount: parseFloat(expenseAmount),
+        description: expenseDescription,
+      });
+      toast.success("Expense Updated Successfully!", { autoClose: 1000 });
+      loadBudgets(user.uid);
+      loadExpenses(selectedBudget._id);
+      setIsEditingExpense(false);
+      setEditExpenseId(null);
+    }catch (error) {
+      // Check if the error response contains a specific message
+      if (error.response) {
+        // Error response from the server
+        const errorMessage = error.response.data.message || 'Error updating Expense!';
+        toast.error(errorMessage, { autoClose: 2000 });
+        console.error("Server Error:", errorMessage);
+      } else if (error.request) {
+        // Request was made but no response was received
+        toast.error("No response from the server.", { autoClose: 1000 });
+        console.error("No response from server:", error.request);
+      } else {
+        // Something happened in setting up the request
+        toast.error("Error in request setup: " + error.message, { autoClose: 1000 });
+        console.error("Request Setup Error:", error.message);
+      }
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+      await axios.delete(`http://localhost:5000/deleteexpense/${expenseId}`);
+      toast.success("Expense Deleted Successfully!", { autoClose: 1000 });
+      loadBudgets(user.uid);
+      loadExpenses(selectedBudget._id);
+    } catch (error) {
+      toast.error("Error deleting expense!", { autoClose: 1000 });
+      console.error("Error deleting expense:", error);
+    }
+  };
+
+  const handleSelectBudget = (budget) => {
+    setSelectedBudget(budget);
+    loadExpenses(budget._id); 
+  };
+
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Manage Your Budgets</h1>
+    <Layout>
+      <div className="p-8 bg-gray-100 min-h-screen">
+        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
+          Manage Your Budgets
+        </h1>
 
-      {/* Create New Budget Card */}
-      <div
-        className="border border-gray-300 bg-white shadow-md rounded-lg p-6 mb-6 cursor-pointer flex items-center justify-between hover:bg-gray-50 transition"
-        onClick={() => setShowForm(!showForm)}
-      >
-        <div className="flex items-center">
-          <FiPlus className="mr-2 text-blue-600" size={24} />
-          <span className="font-semibold text-gray-700 text-lg">Create New Budget</span>
-        </div>
-      </div>
-
-      {showForm && (
-        <form onSubmit={handleCreateBudget} className="mb-6 bg-white shadow-md rounded-lg p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Budget Title"
-              value={newBudgetTitle}
-              onChange={(e) => setNewBudgetTitle(e.target.value)}
-              required
-              className="border border-gray-300 rounded-lg p-3 w-full"
-            />
-            <input
-              type="number"
-              placeholder="Total Amount"
-              value={newBudgetTotalAmount}
-              onChange={(e) => setNewBudgetTotalAmount(e.target.value)}
-              required
-              className="border border-gray-300 rounded-lg p-3 w-full"
-            />
+        <div
+          className="border border-gray-300 bg-white shadow-md rounded-lg p-6 mb-6 cursor-pointer flex items-center justify-between hover:bg-gray-50 transition"
+          onClick={() => {
+            setShowForm(!showForm);
+            setIsEditingBudget(false); // Ensure we're not editing when adding new
+          }}
+        >
+          <div className="flex items-center">
+            <FiPlus className="mr-2 text-blue-600" size={24} />
+            <span className="font-semibold text-gray-700 text-lg">
+              {isEditingBudget ? "Edit Budget" : "Create New Budget"}
+            </span>
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-blue-600 text-white py-3 px-6 rounded-lg w-full hover:bg-blue-700 transition"
-          >
-            Add Budget
-          </button>
-        </form>
-      )}
-
-      {/* Display list of budgets as cards */}
-      <h2 className="text-2xl font-semibold mb-4">Your Budgets</h2>
-      {budgets.length === 0 ? (
-        <p className="text-gray-600">No budgets available. Start by creating a new one!</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {budgets.map((budget) => (
-            <div
-              key={budget._id}
-              className="bg-white border border-gray-300 shadow-md rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition"
-              onClick={() => setSelectedBudget(budget)}
-            >
-              <h3 className="text-xl font-semibold mb-2">{budget.title}</h3>
-              <p className="text-gray-600">Total Amount: ${budget.totalAmount}</p>
-              <p className="text-gray-600">Remaining Amount: ${budget.remaining}</p>
-              <p className="text-gray-600">Expenses: ${budget.expenses}</p>
-              <p className="text-gray-500 text-sm">
-                Created: {new Date(budget.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-          ))}
         </div>
-      )}
 
-      {/* Display selected budget details and expense form */}
-      {selectedBudget && (
-        <div className="bg-white border border-gray-300 shadow-md rounded-lg p-6 mt-8">
-          <h2 className="text-2xl font-bold mb-4">{selectedBudget.title} - Details</h2>
-          <p className="text-gray-700">Total Amount: ${selectedBudget.totalAmount}</p>
-          <p className="text-gray-700">Remaining Amount: ${selectedBudget.remaining}</p>
-          <p className="text-gray-700">Expenses: ${selectedBudget.expenses}</p>
-
-          <form onSubmit={handleAddExpense} className="mt-6">
+        {showForm && (
+          <form
+            onSubmit={isEditingBudget ? handleUpdateBudget : handleCreateBudget}
+            className="mb-6 bg-white shadow-md rounded-lg p-6"
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 type="text"
-                placeholder="Description"
-                value={expenseDescription}
-                onChange={(e) => setExpenseDescription(e.target.value)}
+                placeholder="Budget Title"
+                value={newBudgetTitle}
+                onChange={(e) => setNewBudgetTitle(e.target.value)}
                 required
                 className="border border-gray-300 rounded-lg p-3 w-full"
               />
               <input
                 type="number"
-                placeholder="Amount"
-                value={expenseAmount}
-                onChange={(e) => setExpenseAmount(e.target.value)}
+                placeholder="Total Amount"
+                value={newBudgetTotalAmount}
+                onChange={(e) => setNewBudgetTotalAmount(e.target.value)}
                 required
                 className="border border-gray-300 rounded-lg p-3 w-full"
               />
             </div>
             <button
               type="submit"
-              className="mt-4 bg-green-600 text-white py-3 px-6 rounded-lg w-full hover:bg-green-700 transition"
+              className="mt-4 bg-blue-600 text-white py-3 px-6 rounded-lg w-full hover:bg-blue-700 transition"
             >
-              Add Expense
+              {isEditingBudget ? "Update Budget" : "Add Budget"}
             </button>
           </form>
+        )}
 
-          {/* Display expenses under the selected budget */}
-          <h3 className="text-xl font-semibold mt-6">Expenses</h3>
-          <ul className="mt-4">
-            {selectedBudget.expenses && selectedBudget.expenses.length > 0 ? (
-              selectedBudget.expenses.map((expense) => (
-                <li key={expense._id} className="border p-4 mb-2 rounded-lg bg-gray-50">
-                  <p className="text-gray-700">Description: {expense.description}</p>
-                  <p className="text-gray-700">Amount: ${expense.amount}</p>
-                  <p className="text-gray-500 text-sm">
-                    Date: {new Date(expense.date).toLocaleDateString()}
-                  </p>
-                </li>
-              ))
-            ) : (
-              <p className="text-gray-600">No expenses available for this budget.</p>
-            )}
-          </ul>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Budgets</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {budgets.map((budget) => (
+            <div
+              key={budget._id}
+              className={`bg-white shadow-md rounded-lg p-6 ${
+                selectedBudget && selectedBudget._id === budget._id
+                  ? "border-blue-600 border-2"
+                  : ""
+              } cursor-pointer hover:bg-gray-50 transition`}
+              onClick={() => handleSelectBudget(budget)}
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-gray-800">{budget.title}</h3>
+                <div className="flex space-x-2">
+                  <button
+                    className="text-gray-600 hover:text-blue-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingBudget(true);
+                      setEditBudgetId(budget._id);
+                      setNewBudgetTitle(budget.title);
+                      setNewBudgetTotalAmount(budget.totalAmount);
+                      setShowForm(true);
+                    }}
+                  >
+                    <FiEdit size={20} />
+                  </button>
+                  <button
+                    className="text-gray-600 hover:text-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBudget(budget._id);
+                    }}
+                  >
+                    <FiTrash size={20} />
+                  </button>
+                </div>
+              </div>
+              <p className="text-gray-600 mt-2">
+                Remaining: ${budget.remaining} / Total: ${budget.totalAmount}
+              </p>
+            </div>
+          ))}
         </div>
-      )}
-    </div>
+
+        {selectedBudget && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Expenses for {selectedBudget.title}
+            </h2>
+
+            <form
+              onSubmit={isEditingExpense ? handleUpdateExpense : handleAddExpense}
+              className="mb-6 bg-white shadow-md rounded-lg p-6"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  placeholder="Expense Amount"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  required
+                  className="border border-gray-300 rounded-lg p-3 w-full"
+                />
+                <input
+                  type="text"
+                  placeholder="Expense Description"
+                  value={expenseDescription}
+                  onChange={(e) => setExpenseDescription(e.target.value)}
+                  required
+                  className="border border-gray-300 rounded-lg p-3 w-full"
+                />
+              </div>
+              <button
+                type="submit"
+                className="mt-4 bg-blue-600 text-white py-3 px-6 rounded-lg w-full hover:bg-blue-700 transition"
+              >
+                {isEditingExpense ? "Update Expense" : "Add Expense"}
+              </button>
+            </form>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {expenses.map((expense) => (
+                <div
+                  key={expense._id}
+                  className="bg-white shadow-md rounded-lg p-6"
+                >
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-gray-800">
+                      ${expense.amount}
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button
+                        className="text-gray-600 hover:text-blue-600"
+                        onClick={() => {
+                          setIsEditingExpense(true);
+                          setEditExpenseId(expense._id);
+                          setExpenseAmount(expense.amount);
+                          setExpenseDescription(expense.description);
+                        }}
+                      >
+                        <FiEdit size={20} />
+                      </button>
+                      <button
+                        className="text-gray-600 hover:text-red-600"
+                        onClick={() => handleDeleteExpense(expense._id)}
+                      >
+                        <FiTrash size={20} />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mt-2">{expense.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <ToastContainer />
+      </div>
+    </Layout>
   );
 };
 

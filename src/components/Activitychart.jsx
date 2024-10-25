@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Chart, registerables } from "chart.js";
 
-const ActivityChart = () => {
+const ActivityChart = ({ budgets, amounts }) => {
   const chartRef = useRef(null); // Use ref to store the chart instance
   const canvasRef = useRef(null); // Ref for the canvas
 
@@ -16,11 +16,11 @@ const ActivityChart = () => {
     chartRef.current = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: ["Shopping", "Home Decor", "Garden", "Car", "Youtube"],
+        labels: budgets, // Budgets for x-axis
         datasets: [
           {
-            label: "Total Spend",
-            data: [2000, 6000, 1500, 3000, 5000],
+            label: "Amount Spent",
+            data: amounts, // Amounts for y-axis
             backgroundColor: "rgba(75, 192, 192, 0.2)",
             borderColor: "rgba(75, 192, 192, 1)",
             borderWidth: 1,
@@ -31,6 +31,16 @@ const ActivityChart = () => {
         scales: {
           y: {
             beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Amount Spent ($)',
+            },
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Budgets',
+            },
           },
         },
       },
@@ -41,7 +51,7 @@ const ActivityChart = () => {
         chartRef.current.destroy(); // Cleanup when component unmounts
       }
     };
-  }, []);
+  }, [budgets, amounts]); // Watch for changes to budgets and amounts
 
   return <canvas ref={canvasRef} className="h-64" id="activityChart"></canvas>;
 };

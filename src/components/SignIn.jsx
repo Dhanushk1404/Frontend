@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -14,11 +16,33 @@ const SignIn = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
+      toast.success("Signed in Successfully!", {
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
       console.log('User signed in with Google:', user);
-      navigate('/dashboard');
+
+      // Delay navigation to allow the toast to show
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (error) {
+      toast.error("Error during Google Sign-In!", {
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
       console.error('Error during Google Sign-In:', error.message);
-      setError('Error during Google sign-in. Please try again.');
+      
     }
   };
 
@@ -27,17 +51,53 @@ const SignIn = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      toast.success("Signed in Successfully!", {
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
       console.log('User signed in with email:', user);
-      navigate('/dashboard');
+
+      // Delay navigation to allow the toast to show
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (error) {
-      console.error('Error during Email Sign-In:', error.message);
-      if (error.code === 'auth/wrong-password') {
-        setError('Incorrect password. Please try again.');
-      } else if (error.code === 'auth/user-not-found') {
-        setError('No user found with this email. Please sign up.');
-      } else {
-        setError('Error during email sign-in. Please try again.');
+      // Clear the error message before setting a new one
+      
+      
+      // Error handling for specific Firebase auth error codes
+      let errorMessage;
+      switch (error.code) {
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'No user found with this email';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email format';
+          break;
+        default:
+          errorMessage = 'Error during email sign-in';
+          break;
       }
+      
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+
+     
     }
   };
 
@@ -98,6 +158,7 @@ const SignIn = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

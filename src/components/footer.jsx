@@ -49,7 +49,7 @@ const Footer = () => {
           © 2024 PennyTrack. All Rights Reserved.
         </h1>
         <div className="flex justify-center items-center gap-2 text-sm">
-          <h2 className="font-medium">Developed by @ArunKarthik @Dhanush</h2>
+          <h2 className="font-medium">Developed by  Code Crackers</h2>
           <FaWhatsapp className="text-green-500" />
           <span className="font-medium">+91 9098789009</span>
         </div>

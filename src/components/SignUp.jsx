@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from '../firebase'; // Adjust the path as necessary
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
 
   // Function to send user details to the backend
   const saveUserDetailsToMongoDB = async (userDetails) => {
@@ -46,15 +47,38 @@ const SignUp = () => {
       // Save user to MongoDB
       await saveUserDetailsToMongoDB(userDetails);
 
-      console.log('User signed up with Google:', user);
-      navigate('/dashboard'); // Navigate to the dashboard after successful sign-up
+      toast.success("Signed up successfully!", {
+        position: "top-right",
+        autoClose: 1000, // Adjust the duration if needed
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+
+      // Delay navigation to allow the toast to show
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000); // Adjust the delay as necessary
+
     } catch (error) {
       console.error('Error during Google Sign-Up:', error.message);
+      toast.error("Error in Sign-up!", {
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     }
   };
 
   const handleEmailSignUp = async (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
+    e.preventDefault();
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -64,16 +88,38 @@ const SignUp = () => {
         firebaseUID: user.uid,
         email: user.email,
         name: '', // No name available for email signup unless added to the form
-        password: password, // Save the password as it's an email signup
+        password: password,
       };
+
+      toast.success("Signed up Successfully!", {
+        position: "top-right",
+        autoClose: 1000, // Adjust the duration if needed
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
 
       // Save user to MongoDB
       await saveUserDetailsToMongoDB(userDetails);
 
-      console.log('User signed up with email:', user);
-      navigate('/dashboard'); // Navigate to the dashboard after successful sign-up
+      // Delay navigation to allow the toast to show
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500); // Adjust the delay as necessary
+
     } catch (error) {
       console.error('Error during Email Sign-Up:', error.message);
+      toast.error("Error in Sign-up!", {
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     }
   };
 
@@ -119,6 +165,7 @@ const SignUp = () => {
           </button>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
